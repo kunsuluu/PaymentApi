@@ -14,9 +14,9 @@ namespace PaymentApi.Data
         {
             modelBuilder.Entity<User>(e =>
             {
-                e.HasIndex(u => u.Username).IsUnique(); // логин должен быть уникальным
-                e.Property(u => u.Balance).HasColumnType("decimal(18,2)"); // точность для денег
-                e.Property(u => u.RowVersion).IsRowVersion(); // защита от параллельных списаний
+                e.HasIndex(u => u.Username).IsUnique(); 
+                e.Property(u => u.Balance).HasColumnType("decimal(18,2)"); 
+                e.Property(u => u.RowVersion).IsRowVersion(); 
             });
 
             modelBuilder.Entity<Payment>(e =>
@@ -27,7 +27,7 @@ namespace PaymentApi.Data
 
             modelBuilder.Entity<RevokedToken>(e =>
             {
-                e.HasIndex(r => r.Jti).IsUnique(); // токен должен быть уникальным
+                e.HasIndex(r => r.Jti).IsUnique(); 
             });
         }
     }
@@ -38,9 +38,9 @@ namespace PaymentApi.Data
         public string Username { get; set; } = default!;
         public string PasswordHash { get; set; } = default!;
         public decimal Balance { get; set; } = 8.00m;
-        public DateTime? LockoutUntil { get; set; } // защита от брутфорса
+        public DateTime? LockoutUntil { get; set; } 
         public int FailedLoginCount { get; set; } = 0;
-        public byte[]? RowVersion { get; set; } // защита от параллельных списаний
+        public byte[]? RowVersion { get; set; } 
     }
 
     public class Payment

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using PaymentApi.Data;
 
 namespace PaymentApi.Controllers
@@ -12,13 +13,17 @@ namespace PaymentApi.Controllers
         private readonly AppDbContext _db;
         private static readonly decimal ChargeAmount = 1.10m;
 
-        public PaymentController(AppDbContext db) { _db = db; }
+        public PaymentController(AppDbContext db)
+        {
+            _db = db;
+        }
 
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> MakePayment()
         {
-            var userIdStr = User.FindFirst("sub")?.Value;
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
                 return Unauthorized(new { error = "Invalid token" });
 
@@ -30,14 +35,17 @@ namespace PaymentApi.Controllers
             if (user.Balance < ChargeAmount)
                 return BadRequest(new { error = "Insufficient balance" });
 
-            user.Balance -= ChargeAmount;
+            
+            user.Balance = Math.Round(user.Balance - ChargeAmount, 2, MidpointRounding.ToEven);
 
-            _db.Payments.Add(new Payment
+            var payment = new Payment
             {
                 UserId = user.Id,
                 Amount = ChargeAmount,
                 Timestamp = DateTime.UtcNow
-            });
+            };
+
+            _db.Payments.Add(payment);
 
             try
             {
@@ -50,7 +58,14 @@ namespace PaymentApi.Controllers
                 return Conflict(new { error = "Concurrent payment detected. Please retry." });
             }
 
-            return Ok(new { message = "Payment successful", newBalance = user.Balance });
+            
+            return Ok(new
+            {
+                message = "Payment successful",
+                newBalance = user.Balance,
+                paymentId = payment.Id,
+                timestamp = payment.Timestamp
+            });
         }
     }
 }
